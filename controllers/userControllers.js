@@ -22,11 +22,9 @@ exports.signUp = async (req, res) => {
     });
 
     await user.save();
-    res
-      .status(201)
-      .json({
-        message: "User registered successfully",
-      });
+    res.status(201).json({
+      message: "User registered successfully",
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -40,7 +38,11 @@ exports.signIn = async (req, res) => {
     if (user) {
       if (await bcrypt.compare(password, user.password)) {
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET);
-        return res.json({ token, userInfo: { name: user.name, role: user.role, email: user.email }, message: "login Succesfully" });
+        return res.json({
+          token,
+          userInfo: { name: user.name, role: user.role, email: user.email },
+          message: "login Succesfully",
+        });
       } else {
         return res.json({ token, message: "worng password" });
       }
@@ -54,8 +56,24 @@ exports.signIn = async (req, res) => {
 
 exports.addCart = async (req, res) => {
   const id = req.body.userId;
-  const userData = await User.findOne({ _id: id });
-  userData.cart.push(req.body);
+  const { productId, price, quantity } = req.body;
+  const userData = await User.findOne({
+    _id: id,
+  });
+
+  let inCart = false;
+
+  for (let cProduct of userData.cart) {
+    if (cProduct.productId == productId) {
+      inCart = true;
+      cProduct.quantity += quantity;
+      cProduct.price += quantity + price;
+      break;
+    }
+  }
+  if (!inCart) {
+    userData.cart.push(req.body);
+  }
   userData.save();
   return res.status(201).json({ message: "add to cart" });
 };
@@ -77,7 +95,7 @@ exports.cart = async (req, res) => {
   let total = 0;
   const cartList = [];
   for (let data of cart) {
-    total += data.price * data.quantity;
+    total += data.price;
   }
   return res.json({ cartList: cart, total });
 };
