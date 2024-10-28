@@ -83,6 +83,9 @@ exports.authUser = async (req, res) => {
     { _id: req.body.userId },
     { name: 1, role: 1, email: 1 }
   );
+  if(user === null){
+    return res.status(403).json({ message: "user not found" });
+  }
   return res.status(201).json({ user });
 };
 
